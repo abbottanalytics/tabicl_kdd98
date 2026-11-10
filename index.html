@@ -75,6 +75,13 @@ p { margin: 0.9rem 0 0; }
 .toc a:hover { color: var(--ink); }
 .byline.updated { color: var(--context); }
 .byline.updated a { color: inherit; }
+.guide { font-family: var(--mono); font-size: 0.8rem; line-height: 1.55; color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--context); border-radius: 4px; padding: 0.7rem 0.95rem; margin-top: 1.3rem; scroll-margin-top: 1.5rem; }
+.guide strong { color: var(--ink); }
+.guide p { margin: 0.15rem 0; }
+.guide a { color: var(--context); }
+.part-tag { display: block; font-family: var(--mono); font-size: 0.74rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--context); margin-bottom: 0.35rem; scroll-margin-top: 1.5rem; }
+.part-end { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); margin-top: 2.2rem; }
+.part-end a { color: var(--context); }
 .updates { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); padding-left: 0; list-style: none; }
 .updates li { margin-top: 0.5rem; }
 .refs { list-style: decimal; padding-left: 1.4rem; }
@@ -202,10 +209,15 @@ table.grid th:first-child { text-align: left; }
     <p class="dek">A pretrained transformer that never trains on your data, set against XGBoost, logistic regression, neural nets, kNN and Naive Bayes on three targets: response, high-value response, and gift amount. Scored with standard metrics and with the metric that pays: net revenue from the mailing.</p>
     <div class="byline">Dean Abbott · Abbott Analytics · November 2026 · TabICL v2.2.0 (classifier and regressor checkpoints, 2026-02-12)</div>
     <div class="byline">This analysis used Claude Opus 5.5 to run the analyses, build the charts and tables, and suggest reporting insights. Dean Abbott edited all final content and approved it.</div>
-    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T18:30+01:00">10 November 2026, 6:30 PM CET</time>. New results are added as they come in.</div>
+    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T22:52+01:00">10 November 2026, 10:52 PM CET</time>. New results are added as they come in.</div>
     <nav class="toc" aria-label="Sections">
       <a href="#findings">Findings</a><a href="#how">How it works</a><a href="#setup">Setup</a><a href="#targetb">TARGET_B</a><a href="#hv15">HV15</a><a href="#targetd">TARGET_D</a><a href="#ev">Expected value</a><a href="#speed">Speed &amp; cloud cost</a><a href="#tradeoffs">Pros &amp; cons</a><a href="#assessment">Assessment</a>
     </nav>
+    <div class="guide" id="guide">
+      <p><strong>Reading guide.</strong> This is one live document for both LinkedIn posts.</p>
+      <p><strong>Part 1</strong> (is TabICL ready?): start with <a href="#findings">What we found</a>, then read on from the top.</p>
+      <p><strong>Part 2</strong> (two models are better than one): starts at <a href="#part2">Gift amount</a> and continues through <a href="#ev">Expected value</a>.</p>
+    </div>
   </header>
 
   <p>This study began with a LinkedIn post about TabICL, a "foundation model" for tabular data that claims to match tuned gradient boosting without being trained on your data at all. Claims like that deserve a harder test than a benchmark table. So I ran TabICL on a data set I know well: the KDD Cup 1998 donor data. It is messy and imbalanced, the dollar amounts are heavy-tailed, and the predictors are weak. It is also best judged by a metric that isn't statistical at all: the net revenue a mailing earns. TabICL knows nothing about that metric. It optimizes what it was pretrained to optimize. The question is whether that is good enough when the money is what counts.</p>
@@ -513,7 +525,7 @@ table.grid th:first-child { text-align: left; }
     <li><strong>XGBoost 5k peaks high but noisily.</strong> Its seed-0 peak of $6,783 matches logistic regression, but its AUC moves ±0.01 across seeds, and its top 10% earns $750 less than XGBoost on all rows.</li>
   </ul>
 
-  <h2 id="targetd">Gift amount: TARGET_D (regression on responders)</h2>
+  <h2 id="targetd"><span class="part-tag" id="part2">Part 2 · Two models are better than one</span>Gift amount: TARGET_D (regression on responders)</h2>
   <p>This is TabICL's most natural fit. Every model learns from the same 2,421 train responders, and all of them fit inside a single TabICL context, so nothing is subsampled away. The TabICL regressor is a separate checkpoint, pretrained the same way on synthetic regression tables. Accuracy is measured on the 2,422 test responders. Every model also predicts a gift for all 47,706 test rows, which the expected-value section needs.</p>
   <figure>
     <div class="fig">
@@ -553,7 +565,7 @@ table.grid th:first-child { text-align: left; }
   <div class="tablewrap wide" id="d-depth"></div>
   <p>A gift model on its own is a surprisingly good mailing list. Its top 10% nets $3.3–3.6k, more than any TARGET_B model's top 10% (−$0.2k to $1.5k), because people who gave large amounts before tend to give large amounts again. It doesn't account for how likely each donor is to respond. Combining the two is the next section.</p>
 
-  <h2 id="ev">Expected value: P(respond) × predicted gift</h2>
+  <h2 id="ev"><span class="part-tag">Part 2, continued</span>Expected value: P(respond) × predicted gift</h2>
   <p>A response model ignores the gift amount, and a gift model can only learn from the donors who gave. Expected value combines the two while keeping every record in play. For each donor, multiply the probability of responding by the predicted gift, and mail if that expected value is greater than the $0.68 cost. The thinking is a bit like the Heckman correction for sample-selection bias, but it works on the predictions rather than on the model coefficients. I first saw the idea in Zadrozny and Elkan (2001)<sup><a href="#ref-1">1</a></sup>.</p>
   <p>It is also where calibration starts to matter. The probability enters the decision as a number, not just a rank, so a probability that runs low mails too few people. Unlike the profit peak, the rule uses no test labels, so it is a real operating decision. The grid pairs every response model with every gift model. The "constant gift" column gives every donor the mean train gift ($15.62), to show what the gift model adds. The "TabICL 5k rescaled" row tests that calibration effect. Rescaling multiplies every TabICL probability by the same factor, about 1.29, so that their average over the donors being scored matches the 5.1% response rate in TabICL's 5,000-row training sample. It uses no test labels and doesn't change the ranking. It only changes how many donors clear the $0.68 bar.</p>
   <figure>
@@ -577,6 +589,8 @@ table.grid th:first-child { text-align: left; }
     <li><strong>Calibration failures show up as dollars.</strong> Naive Bayes ranks donors reasonably, but its probabilities are so inflated that the rule mails 58% of the file and nets under $2k.</li>
   </ul>
   <p>We also tried HV15 response models in place of TARGET_B. P(HV15) × predicted gift is the expected gift from donors expected to give $15 or more, so the same $0.68 rule applies. It doesn't help maximize cumulative net revenue: the best HV15 pairing nets $6.2k and mails only 27% of the file, against $8.0k and 53% for the best TARGET_B pairing. Presumably HV15 already carries the influence of the dollars, so coding a $10 donor as a 0 and then combining with a gift model leaves out donors who would still have been profitable to mail.</p>
+
+  <p class="part-end">End of Part 2 · <a href="#guide">Back to the reading guide</a></p>
 
   <h2 id="speed">Speed, and what a bigger box buys</h2>
   <p>All TabICL timings are from an Apple M1 with 16 GB, running on the CPU with 4 threads, because a GPU (MPS) run crashed the machine. Every other model fit and scored in under 6 seconds.</p>
