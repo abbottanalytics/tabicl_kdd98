@@ -201,7 +201,7 @@ table.grid th:first-child { text-align: left; }
     <p class="dek">A pretrained transformer that never trains on your data, set against XGBoost, logistic regression, neural nets, kNN and Naive Bayes on three targets: response, high-value response, and gift amount. Scored with standard metrics and with the metric that pays: net revenue from the mailing.</p>
     <div class="byline">Dean Abbott · Abbott Analytics · November 2026 · TabICL v2.2.0 (classifier and regressor checkpoints, 2026-02-12)</div>
     <div class="byline">This analysis used Claude Opus 5.5 to run the analyses, build the charts and tables, and suggest reporting insights. Dean Abbott edited all final content and approved it.</div>
-    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T17:04+01:00">10 November 2026, 5:04 PM CET</time>. New results are added as they come in.</div>
+    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T17:21+01:00">10 November 2026, 5:21 PM CET</time>. New results are added as they come in.</div>
     <nav class="toc" aria-label="Sections">
       <a href="#findings">Findings</a><a href="#how">How it works</a><a href="#setup">Setup</a><a href="#targetb">TARGET_B</a><a href="#hv15">HV15</a><a href="#targetd">TARGET_D</a><a href="#ev">Expected value</a><a href="#speed">Speed &amp; cloud cost</a><a href="#tradeoffs">Pros &amp; cons</a><a href="#assessment">Assessment</a>
     </nav>
@@ -567,6 +567,7 @@ table.grid th:first-child { text-align: left; }
     <li><strong>The gift model is worth more than the choice of response model.</strong> With a constant gift, the best response model nets $3.5–4.2k under the rule, which is below mail-everyone. Adding any real gift model raises that to $6.5–8.0k.</li>
     <li><strong>Calibration failures show up as dollars.</strong> Naive Bayes ranks donors reasonably, but its probabilities are so inflated that the rule mails 58% of the file and nets under $2k.</li>
   </ul>
+  <p>We also tried HV15 response models in place of TARGET_B. P(HV15) × predicted gift is the expected gift from donors expected to give $15 or more, so the same $0.68 rule applies. It doesn't help maximize cumulative net revenue: the best HV15 pairing nets $6.2k and mails only 27% of the file, against $8.0k and 53% for the best TARGET_B pairing. Presumably HV15 already carries the influence of the dollars, so coding a $10 donor as a 0 and then combining with a gift model leaves out donors who would still have been profitable to mail.</p>
 
   <h2 id="speed">Speed, and what a bigger box buys</h2>
   <p>All TabICL timings are from an Apple M1 with 16 GB, running on the CPU with 4 threads, because a GPU (MPS) run crashed the machine. Every other model fit and scored in under 6 seconds.</p>
