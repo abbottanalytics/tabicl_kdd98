@@ -201,7 +201,7 @@ table.grid th:first-child { text-align: left; }
     <p class="dek">A pretrained transformer that never trains on your data, set against XGBoost, logistic regression, neural nets, kNN and Naive Bayes on three targets: response, high-value response, and gift amount. Scored with standard metrics and with the metric that pays: net revenue from the mailing.</p>
     <div class="byline">Dean Abbott · Abbott Analytics · November 2026 · TabICL v2.2.0 (classifier and regressor checkpoints, 2026-02-12)</div>
     <div class="byline">This analysis used Claude Opus 5.5 to run the analyses, build the charts and tables, and suggest reporting insights. Dean Abbott edited all final content and approved it.</div>
-    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-03T10:01-08:00">3 November 2026, 10:01 AM PST</time>. New results are added as they come in.</div>
+    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T17:04+01:00">10 November 2026, 5:04 PM CET</time>. New results are added as they come in.</div>
     <nav class="toc" aria-label="Sections">
       <a href="#findings">Findings</a><a href="#how">How it works</a><a href="#setup">Setup</a><a href="#targetb">TARGET_B</a><a href="#hv15">HV15</a><a href="#targetd">TARGET_D</a><a href="#ev">Expected value</a><a href="#speed">Speed &amp; cloud cost</a><a href="#tradeoffs">Pros &amp; cons</a><a href="#assessment">Assessment</a>
     </nav>
@@ -546,12 +546,12 @@ table.grid th:first-child { text-align: left; }
 
   <h2 id="ev">Expected value: P(respond) × predicted gift</h2>
   <p>A response model ignores the gift amount, and a gift model can only learn from the donors who gave. Expected value combines the two while keeping every record in play. For each donor, multiply the probability of responding by the predicted gift, and mail if that expected value is greater than the $0.68 cost. The thinking is a bit like the Heckman correction for sample-selection bias, but it works on the predictions rather than on the model coefficients. I first saw the idea in Zadrozny and Elkan (2001)<sup><a href="#ref-1">1</a></sup>.</p>
-  <p>It is also where calibration starts to matter. The probability enters the decision as a number, not just a rank, so a probability that runs low mails too few people. Unlike the profit peak, the rule uses no test labels, so it is a real operating decision. The grid pairs every response model with every gift model. The "constant gift" column gives every donor the mean train gift ($15.62), to show what the gift model adds.</p>
+  <p>It is also where calibration starts to matter. The probability enters the decision as a number, not just a rank, so a probability that runs low mails too few people. Unlike the profit peak, the rule uses no test labels, so it is a real operating decision. The grid pairs every response model with every gift model. The "constant gift" column gives every donor the mean train gift ($15.62), to show what the gift model adds. The "TabICL 5k rescaled" row tests that calibration effect. Rescaling multiplies every TabICL probability by the same factor, about 1.29, so that their average over the donors being scored matches the 5.1% response rate in TabICL's 5,000-row training sample. It uses no test labels and doesn't change the ranking. It only changes how many donors clear the $0.68 bar.</p>
   <figure>
     <div class="fig wide">
       <div class="tablewrap" id="ev-grid" style="margin-top:0"></div>
     </div>
-    <figcaption>Net revenue on the test half when mailing every donor whose P × gift is greater than $0.68. Rows are response models, columns are gift models, and darker cells earned more. Mailing everyone nets $5,405. "TabICL 5k rescaled" multiplies TabICL's probabilities by the context response rate divided by their mean on the test rows. That uses no labels, and moves the mean from 0.039 to 0.051.</figcaption>
+    <figcaption>Net revenue on the test half when mailing every donor whose P × gift is greater than $0.68. Rows are response models, columns are gift models, and darker cells earned more. Mailing everyone nets $5,405. Rescaling moves TabICL's mean probability from 0.039 to 0.051.</figcaption>
   </figure>
   <figure>
     <div class="fig wide">
