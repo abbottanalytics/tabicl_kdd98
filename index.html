@@ -121,6 +121,8 @@ tr.icl td:first-child { color: var(--context); font-weight: 500; }
 td.neg { color: var(--loss); }
 #t-table th:nth-child(2), #t-table td:nth-child(2), #ev-top th:nth-child(2), #ev-top td:nth-child(2) { text-align: left; }
 td.best { font-weight: 600; }
+#sh-top5 th, #sh-top5 td { text-align: left; white-space: normal; vertical-align: top; min-width: 9rem; }
+#sh-top5 td:first-child { min-width: 0; white-space: nowrap; }
 .note { font-size: 0.78rem; color: var(--ink-2); }
 .pending { font-family: var(--mono); font-size: 0.8rem; color: var(--test); border: 1px dashed var(--test); border-radius: 4px; padding: 0.6rem 0.8rem; margin-top: 1rem; }
 /* EV grid */
@@ -209,7 +211,7 @@ table.grid th:first-child { text-align: left; }
     <p class="dek">A pretrained transformer that never trains on your data, set against XGBoost, logistic regression, neural nets, kNN and Naive Bayes on three targets: response, high-value response, and gift amount. Scored with standard metrics and with the metric that pays: net revenue from the mailing.</p>
     <div class="byline">Dean Abbott · Abbott Analytics · November 2026 · TabICL v2.2.0 (classifier and regressor checkpoints, 2026-02-12)</div>
     <div class="byline">This analysis used Claude Opus 5.5 to run the analyses, build the charts and tables, and suggest reporting insights. Dean Abbott edited all final content and approved it.</div>
-    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-10T22:52+01:00">10 November 2026, 10:52 PM CET</time>. New results are added as they come in.</div>
+    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-12T16:25+01:00">12 November 2026, 4:25 PM CET</time>. New results are added as they come in.</div>
     <nav class="toc" aria-label="Sections">
       <a href="#findings">Findings</a><a href="#how">How it works</a><a href="#setup">Setup</a><a href="#targetb">TARGET_B</a><a href="#hv15">HV15</a><a href="#targetd">TARGET_D</a><a href="#ev">Expected value</a><a href="#speed">Speed &amp; cloud cost</a><a href="#tradeoffs">Pros &amp; cons</a><a href="#assessment">Assessment</a>
     </nav>
@@ -217,6 +219,7 @@ table.grid th:first-child { text-align: left; }
       <p><strong>Reading guide.</strong> This is one live document for both LinkedIn posts.</p>
       <p><strong>Part 1</strong> (is TabICL ready?): start with <a href="#findings">What we found</a>, then read on from the top.</p>
       <p><strong>Part 2</strong> (two models are better than one): starts at <a href="#part2">Gift amount</a> and continues through <a href="#ev">Expected value</a>.</p>
+      
     </div>
   </header>
 
@@ -487,10 +490,10 @@ table.grid th:first-child { text-align: left; }
       <div class="chart-legend" id="b-cum-legend"></div>
       <svg id="b-cum" role="img" aria-label="Cumulative net revenue by mailing depth for each TARGET_B model"></svg>
     </div>
-    <figcaption>Mail the test half in score order. The curve is the running total of gifts minus $0.68 per piece, and every curve ends at the mail-everyone figure of $5,405. Click the legend to show or hide models, and hover for revenue and responders mailed at that depth. Seed 0 of each model.</figcaption>
+    <figcaption>The curve above shows cumulative net revenue: the running total of gift amounts minus $0.68 per piece on the scored population, after it has been sorted by predicted value, high to low. If everyone receives the recovery mailing, every model has the same value, so every curve ends at the mail-everyone figure of $5,405. The aim is to mail only the lapsed donors that maximize cumulative net revenue. Click the legend to show or hide models, and hover for revenue and responders mailed at that depth.</figcaption>
   </figure>
   <div class="tablewrap wide" id="b-depth"></div>
-  <p class="note">Hits = responders (TARGET_B = 1) inside the mailed group; HV = responders who gave $15 or more. Peak = the most profitable depth, chosen with hindsight on the test half, so it is an upper bound and not an operating rule.</p>
+  <p class="note">The table above assesses the models at several mailing depths: the top 10%, 20% and 50% of model scores. "Hits" are donors whose actual TARGET_B is 1, with any gift amount (TARGET_D). "HV hits" are donors who gave $15 or more. "Peak" is the best possible cut point for net revenue after sorting the list by model score, high to low. It is chosen with hindsight on the test half, so it is an upper bound, not an operating rule.</p>
   <p><strong>This is the finding AUC hides.</strong> TabICL's top 10% <em>loses</em> money. Its 4,771 best-scored donors include 433 responders, close to XGBoost's 448, but only 15 of them gave $15 or more, against 78 for XGBoost. TabICL puts frequent, small-gift donors at the top of its list. The two models have nearly the same AUC and the same hit counts but very different dollars. It isn't a fluke of one run. TabICL's top 10% lost money in all three seeds (−$249 to −$329, with only 14–15 donors of $15 or more), while XGBoost's made $1,349 to $1,731. We haven't established why. One hypothesis is that TabICL's built-in power and quantile normalizations flatten the long dollar tails, so big-gift history carries less weight. That hypothesis is testable.</p>
   <p>Every TARGET_B curve peaks at 91–100% depth. A response model alone can't tell you whom <em>not</em> to mail profitably, because the gift size drives the money. That is the case for the next two targets.</p>
 
@@ -547,14 +550,14 @@ table.grid th:first-child { text-align: left; }
     <li><strong>Linear models and the neural net miss the big gifts.</strong> Their rank correlation is good (0.77), but their RMSE is $12.5–13. A few large gifts drive the squared error, and both models extrapolate badly on them.</li>
   </ul>
   <h3>Tuned against untuned</h3>
-  <p>Every classical model above ran untuned. TabICL also ran on its defaults, but its authors chose those defaults on their own benchmarks and pretrained it for exactly this kind of task, so in effect it arrives tuned. To see how much tuning closes the gap, each classical gift model got a small grid: kNN with k from 25 to 800; XGBoost's trees, depth and minimum child weight; the neural net's size and L2 penalty; and ridge's alpha. Each setting was chosen on the training half only, by 5-fold cross-validation, using the net revenue of a logistic response × gift pairing at its training peak. The chosen setting was then fit on all train responders and scored once on the test half. The "train cutoff" columns use a cutoff chosen the same way: the score where cumulative net revenue peaks on the training half's out-of-fold predictions, applied to the test half. All gift models predict dollars, not log dollars, so the large gifts pull the fit toward them, which is what a mailing decision needs. TabICL is seed 0 here, so its figures differ slightly from the three-seed means above.</p>
+  <p>Every classical model above ran untuned, meaning it used the default values for its parameters. TabICL also ran on its defaults, but its authors chose those defaults on their own benchmarks and pretrained it for exactly this kind of task, so in effect it arrives tuned. To see how much tuning closes the gap, each classical gift model got a small grid: kNN with k from 25 to 800; XGBoost's trees, depth and minimum child weight; the neural net's size and L2 penalty; and ridge's alpha. Each setting was chosen on the training half only, by 5-fold cross-validation, using the net revenue of a logistic response × gift pairing at its training peak. The chosen setting was then fit on all train responders and scored once on the test half. The "train cutoff" columns use a cutoff chosen the same way: the score where cumulative net revenue peaks on the training half's out-of-fold predictions, applied to the test half. All gift models predict dollars, not log dollars, so the large gifts pull the fit toward them, which is what a mailing decision needs. TabICL is seed 0 here, so its figures differ slightly from the three-seed means above.</p>
   <div class="tablewrap wide" id="d-tuned"></div>
   <ul>
     <li><strong>Tuning helps, but untuned TabICL still leads on accuracy.</strong> Tuning cut ridge's MAE from $4.66 to $4.48 and XGBoost's from $4.53 to $4.46, against $4.11 for TabICL, and none of the tuned models matched its rank correlation (0.796). Its RMSE lead is less secure: a log-gift XGBoost, chosen for rank correlation instead of revenue, reached $9.27 against TabICL's $9.54.</li>
     <li><strong>For kNN, the default k = 25 was already best.</strong> Larger neighborhoods made every measure worse. The responder data are dense enough that a large k only averages away the few inputs, such as past gift amounts, that carry the signal.</li>
     <li><strong>On revenue, no gift model clearly wins once the cutoff is chosen on training data.</strong> Paired with logistic response, every gift model nets $6.9–7.5k, a spread within run-to-run noise. Under the $0.68 rule, TabICL's gift model still gives the best mailing ($7,970, against $7,872 for tuned ridge).</li>
   </ul>
-  <h3>Ranking the whole file by predicted gift</h3>
+  <h3>Cumulative net revenue for TARGET_D models</h3>
   <figure>
     <div class="fig wide">
       <div class="chart-legend" id="d-cum-legend"></div>
@@ -574,6 +577,7 @@ table.grid th:first-child { text-align: left; }
     </div>
     <figcaption>Net revenue on the test half when mailing every donor whose P × gift is greater than $0.68. Rows are response models, columns are gift models, and darker cells earned more. Mailing everyone nets $5,405. Rescaling moves TabICL's mean probability from 0.039 to 0.051.</figcaption>
   </figure>
+  <h3>Cumulative net revenue for combined models</h3>
   <figure>
     <div class="fig wide">
       <div class="chart-legend" id="ev-cum-legend"></div>
@@ -591,6 +595,7 @@ table.grid th:first-child { text-align: left; }
   <p>We also tried HV15 response models in place of TARGET_B. P(HV15) × predicted gift is the expected gift from donors expected to give $15 or more, so the same $0.68 rule applies. It doesn't help maximize cumulative net revenue: the best HV15 pairing nets $6.2k and mails only 27% of the file, against $8.0k and 53% for the best TARGET_B pairing. Presumably HV15 already carries the influence of the dollars, so coding a $10 donor as a 0 and then combining with a gift model leaves out donors who would still have been profitable to mail.</p>
 
   <p class="part-end">End of Part 2 · <a href="#guide">Back to the reading guide</a></p>
+
 
   <h2 id="speed">Speed, and what a bigger box buys</h2>
   <p>All TabICL timings are from an Apple M1 with 16 GB, running on the CPU with 4 threads, because a GPU (MPS) run crashed the machine. Every other model fit and scored in under 6 seconds.</p>
