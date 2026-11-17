@@ -211,7 +211,7 @@ table.grid th:first-child { text-align: left; }
     <p class="dek">A pretrained transformer that never trains on your data, set against XGBoost, logistic regression, neural nets, kNN and Naive Bayes on three targets: response, high-value response, and gift amount. Scored with standard metrics and with the metric that pays: net revenue from the mailing.</p>
     <div class="byline">Dean Abbott · Abbott Analytics · November 2026 · TabICL v2.2.0 (classifier and regressor checkpoints, 2026-02-12)</div>
     <div class="byline">This analysis used Claude Opus 5.5 to run the analyses, build the charts and tables, and suggest reporting insights. Dean Abbott edited all final content and approved it.</div>
-    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-17T11:11+01:00">17 November 2026, 11:11 AM CET</time>. New results are added as they come in.</div>
+    <div class="byline updated"><strong>Live document.</strong> Last updated <time datetime="2026-11-17T11:56+01:00">17 November 2026, 11:56 AM CET</time>. New results are added as they come in.</div>
     <nav class="toc" aria-label="Sections">
       <a href="#findings">Findings</a><a href="#how">How it works</a><a href="#setup">Setup</a><a href="#targetb">TARGET_B</a><a href="#hv15">HV15</a><a href="#targetd">TARGET_D</a><a href="#ev">Expected value</a><a href="#speed">Speed &amp; cloud cost</a><a href="#tradeoffs">Pros &amp; cons</a><a href="#assessment">Assessment</a>
     </nav>
@@ -293,6 +293,8 @@ table.grid th:first-child { text-align: left; }
     </div>
     <figcaption>XGBoost spends its effort when it fits your rows. TabICL spent its effort during pretraining. On your data it runs the frozen network once over context and test rows together, and nothing in the network changes. Times are CPU times on an M1 laptop for 47,706 test rows.</figcaption>
   </figure>
+
+  <p><strong>In short.</strong> TabICL's secret isn't only the synthetic data. It's that the network turns any table into the same shape. First it reads each value against its own column, so units and scale don't matter. Then it lets each row's features interact, and compresses the row into a fixed-width vector: four summary (CLS) tokens of 128 numbers each, 512 in all, whether the table has 10 columns or 500. Pretraining on millions of synthetic tables taught it what to keep in those 512 numbers. That choice was learned, not designed, so no one can say exactly what each number means. A final transformer then works out the pattern in your labelled rows and uses it to score the new ones.</p>
 
   <h3>The three stages</h3>
   <p>Inside that forward pass, the network works in three stages. Each one shrinks the table into something the next stage can handle.</p>
